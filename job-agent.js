@@ -96,13 +96,13 @@ function applyFilters(job) {
     text.includes("defense contractor");
 
   const tooMuchExp = [
-    /\b([6-9]|\d{2,})\+?\s*years?\s+(?:of\s+)?(?:\w+\s+){0,3}experience/,
-    /\b([6-9]|\d{2,})\s*-\s*\d+\s*years?\s+(?:of\s+)?(?:\w+\s+){0,3}experience/,
-    /experience\s*(?:of\s+)?(?:at\s+least\s+)?([6-9]|\d{2,})\+?\s*years?/,
-    /minimum\s+(?:of\s+)?([6-9]|\d{2,})\s*years?/,
+    /\b([5-9]|\d{2,})\+?\s*years?\s+(?:of\s+)?(?:\w+\s+){0,3}experience/,
+    /\b([5-9]|\d{2,})\s*-\s*\d+\s*years?\s+(?:of\s+)?(?:\w+\s+){0,3}experience/,
+    /experience\s*(?:of\s+)?(?:at\s+least\s+)?([5-9]|\d{2,})\+?\s*years?/,
+    /minimum\s+(?:of\s+)?([5-9]|\d{2,})\s*years?/,
   ].some((pattern) => {
     const match = text.match(pattern);
-    return match && parseInt(match[1]) > 5;
+    return match && parseInt(match[1]) >= 5;
   });
 
   return !notRelevant && !wrongTitle && !hasClearance && !tooMuchExp;
