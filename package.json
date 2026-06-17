@@ -1,0 +1,30 @@
+{
+  "name": "job-application-agent",
+  "version": "1.0.0",
+  "description": "AI-powered daily job application agent with resume customization",
+  "type": "module",
+  "main": "job-agent.js",
+  "scripts": {
+    "start": "node --env-file=.env job-agent.js",
+    "test-run": "node --env-file=.env job-agent.js --test",
+    "dev": "node --watch job-agent.js",
+    "test": "NODE_ENV=test node job-agent.js"
+  },
+  "keywords": [
+    "job-search",
+    "ai",
+    "claude",
+    "resume",
+    "automation"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.29.0",
+    "googleapis": "^173.0.0",
+    "node-fetch": "^3.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
