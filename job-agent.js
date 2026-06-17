@@ -41,16 +41,18 @@ const ALLOWED_TITLE_PATTERNS = [
   /\bfrontend\b/,
   /\bfront.end\b/,
   /\bfull.?stack/,
-  /\breact\b/,           // React Developer, React Engineer, React/Next.js Dev, etc.
+  /\breact\b/,
   /\bnext\.?js\b/,
-  /\bjavascript developer/,
-  /\bjavascript engineer/,
-  /\btypescript developer/,
-  /\btypescript engineer/,
+  /\bjavascript\b/,
+  /\btypescript\b/,
   /\bui developer/,
   /\bui engineer/,
   /\bapplication developer/,
   /\bapplication engineer/,
+  // Broad catch-all — covers "Senior Engineer", "Backend Engineer", etc.
+  // Blocked list still filters out data/ml/devops/qa/manager roles.
+  /\bengineer\b/,
+  /\bdeveloper\b/,
 ];
 
 // Blocked even if an allowed pattern matches (catches edge cases like "React Sales Engineer").
@@ -191,12 +193,19 @@ async function fetchRemoteOKJobs() {
 }
 
 async function fetchAllJobs() {
-  const results = await Promise.all([
-    ...ADZUNA_SEARCHES.map(([q, l]) => fetchAdzunaJobs(q, l)),
-    fetchRemoteOKJobs(),
-  ]);
+  // Adzuna requests run sequentially to avoid 429 rate limiting
+  const adzunaResults = [];
+  for (const [q, l] of ADZUNA_SEARCHES) {
+    const jobs = await fetchAdzunaJobs(q, l);
+    adzunaResults.push(...jobs);
+    await new Promise((r) => setTimeout(r, 350));
+  }
+  const remoteOkJobs = await fetchRemoteOKJobs();
+
   const seen = new Set();
-  return results.flat().filter((j) => (seen.has(j.job_id) ? false : seen.add(j.job_id)));
+  return [...adzunaResults, ...remoteOkJobs].filter((j) =>
+    seen.has(j.job_id) ? false : seen.add(j.job_id)
+  );
 }
 
 // ============ SEEN-JOBS CACHE (Airtable-backed, works in CI) ============
