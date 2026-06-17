@@ -110,15 +110,18 @@ function applyFilters(job) {
 
 const ADZUNA_SEARCHES = [
   // Local / hybrid roles
-  ["react next.js typescript developer", "Madison WI"],
-  ["frontend software engineer",         "Madison WI"],
-  ["frontend software engineer",         "Chicago IL"],
-  ["full stack react developer",         "Chicago IL"],
-  ["software engineer react",            "New York NY"],
+  ["react typescript developer",    "Madison WI"],
+  ["frontend software engineer",    "Madison WI"],
+  ["frontend software engineer",    "Chicago IL"],
+  ["full stack developer react",    "Chicago IL"],
+  ["software engineer react",       "New York NY"],
+  ["frontend developer",            "Minneapolis MN"],
+  ["software engineer react",       "Austin TX"],
+  ["frontend engineer typescript",  "Seattle WA"],
   // Remote
-  ["react next.js frontend developer remote",   ""],
-  ["full stack typescript engineer remote",      ""],
-  ["javascript react software engineer remote",  ""],
+  ["react frontend developer remote",          ""],
+  ["full stack typescript engineer remote",    ""],
+  ["next.js software engineer remote",         ""],
 ];
 
 async function fetchAdzunaJobs(query, location) {
@@ -192,6 +195,34 @@ async function fetchRemoteOKJobs() {
   }
 }
 
+async function fetchRemotiveJobs() {
+  logApiRequest("Remotive", "remote software dev jobs");
+  try {
+    const response = await fetch(
+      "https://remotive.com/api/remote-jobs?category=software-dev&limit=100"
+    );
+    if (!response.ok) {
+      console.error(`❌ Remotive error: ${response.status}`);
+      return [];
+    }
+    const data = await response.json();
+    console.log(`  [Remotive] ${data.jobs?.length || 0} total jobs fetched`);
+    return (data.jobs || [])
+      .map((j) => ({
+        job_id: "remotive-" + j.id,
+        job_title: j.title,
+        employer_name: j.company_name,
+        job_location: j.candidate_required_location || "Remote",
+        job_description: j.description || "",
+        job_apply_link: j.url || "",
+      }))
+      .filter(applyFilters);
+  } catch (error) {
+    console.error("Error fetching Remotive jobs:", error.message);
+    return [];
+  }
+}
+
 async function fetchAllJobs() {
   // Adzuna requests run sequentially to avoid 429 rate limiting
   const adzunaResults = [];
@@ -200,10 +231,15 @@ async function fetchAllJobs() {
     adzunaResults.push(...jobs);
     await new Promise((r) => setTimeout(r, 350));
   }
-  const remoteOkJobs = await fetchRemoteOKJobs();
+
+  // RemoteOK and Remotive can run in parallel (no rate limit issues)
+  const [remoteOkJobs, remotiveJobs] = await Promise.all([
+    fetchRemoteOKJobs(),
+    fetchRemotiveJobs(),
+  ]);
 
   const seen = new Set();
-  return [...adzunaResults, ...remoteOkJobs].filter((j) =>
+  return [...adzunaResults, ...remoteOkJobs, ...remotiveJobs].filter((j) =>
     seen.has(j.job_id) ? false : seen.add(j.job_id)
   );
 }
@@ -394,7 +430,7 @@ async function main() {
   }
 
   // Fetch jobs from Adzuna + RemoteOK
-  console.log("📋 Fetching jobs from Adzuna + RemoteOK...");
+  console.log("📋 Fetching jobs from Adzuna + RemoteOK + Remotive...");
   const allJobs = await fetchAllJobs();
 
   // Dedup against Airtable (works locally and in CI — no local file needed)
